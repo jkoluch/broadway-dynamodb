@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 
 class ExpressionAttributeNamesTest extends TestCase
 {
-    public function testCreateExpressionAttributeNames()
+    public function testCreateExpressionAttributeNames(): void
     {
         $field = 'foo';
         $expressionAttributeNames = new ExpressionAttributeNames();
@@ -24,6 +24,6 @@ class ExpressionAttributeNamesTest extends TestCase
             '#' . $field => $field
         ];
 
-        $this->assertEquals($expected, $expressionAttributeNames->getExpression());
+        self::assertEquals($expected, $expressionAttributeNames->getExpression());
     }
 }

@@ -14,7 +14,7 @@ use Ramsey\Uuid\Uuid;
 
 class CriteriaExpressionBuilderTest extends TestCase
 {
-    public function testCreateScanFilterWithSimpleCondition()
+    public function testCreateScanFilterWithSimpleCondition(): void
     {
         $randomInt = random_int(1, 999999);
 
@@ -25,12 +25,12 @@ class CriteriaExpressionBuilderTest extends TestCase
 
         $scanFilter = new CriteriaExpressionBuilder($fields);
 
-        $this->assertEquals('#foo = :foo and #bar = :bar', $scanFilter->getFilterExpression());
-        $this->assertEquals('{":foo":"baz",":bar":' . $randomInt . '}', $scanFilter->getExpressionAttributeValues());
-        $this->assertEquals(['#foo' => 'foo', '#bar' => 'bar'], $scanFilter->getExpressionAttributeNames());
+        self::assertEquals('#foo = :foo and #bar = :bar', $scanFilter->getFilterExpression());
+        self::assertEquals('{":foo":"baz",":bar":' . $randomInt . '}', $scanFilter->getExpressionAttributeValues());
+        self::assertEquals(['#foo' => 'foo', '#bar' => 'bar'], $scanFilter->getExpressionAttributeNames());
     }
 
-    public function testCreateScanFilterWithInCondition()
+    public function testCreateScanFilterWithInCondition(): void
     {
         $id1 = Uuid::uuid4()->toString();
         $id2 = Uuid::uuid4()->toString();
@@ -39,8 +39,8 @@ class CriteriaExpressionBuilderTest extends TestCase
 
         $scanFilter = new CriteriaExpressionBuilder($fields);
 
-        $this->assertEquals('#uuid IN(:uuid1, :uuid2)', $scanFilter->getFilterExpression());
-        $this->assertEquals('{":uuid1":"'. $id1 . '",":uuid2":"' . $id2 . '"}', $scanFilter->getExpressionAttributeValues());
-        $this->assertEquals(['#uuid' => 'uuid'], $scanFilter->getExpressionAttributeNames());
+        self::assertEquals('#uuid IN(:uuid1, :uuid2)', $scanFilter->getFilterExpression());
+        self::assertEquals('{":uuid1":"'. $id1 . '",":uuid2":"' . $id2 . '"}', $scanFilter->getExpressionAttributeValues());
+        self::assertEquals(['#uuid' => 'uuid'], $scanFilter->getExpressionAttributeNames());
     }
 }

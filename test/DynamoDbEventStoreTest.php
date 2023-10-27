@@ -15,27 +15,28 @@ use Broadway\Serializer\ReflectionSerializer;
 
 class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
 {
-    private $dynamoDbEventStore;
+    private DynamoDbEventStore $dynamoDbEventStore;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $dynamodb = new DynamoDbClient([
-            'region'   => 'us-west-2',
+            'region'   => 'local',
             'debug' => true,
             'version'  => 'latest',
-            'endpoint' => 'http://localhost:8000',
+            'endpoint' => 'http://dynamodb:8000',
             'credentials' => [
-                'key' => 'not-a-real-key',
-                'secret' => 'not-a-real-secret',
+                'key' => 'key',
+                'secret' => 'secret',
             ],
         ]);
 
+		/** @var array{TableNames:string[]}|null $tables */
         $tables = $dynamodb->listTables([]);
 
         if (isset($tables['TableNames'])) {
-            foreach ($tables['TableNames'] as $dynamoDbTable) {
+			foreach ($tables['TableNames'] as $dynamoDbTable) {
                 $dynamodb->deleteTable([
                     'TableName' => $dynamoDbTable,
                 ]);
@@ -78,7 +79,7 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function testInsertMessageAndLoadIt()
+    public function testInsertMessageAndLoadIt(): void
     {
         $id =  \Ramsey\Uuid\Uuid::uuid4()->toString();
         $playhead = 0;
@@ -102,18 +103,19 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
 
         $events = $this->dynamoDbEventStore->load($id);
 
-        $this->assertCount(1, $events);
+        self::assertCount(1, $events);
 
-        foreach ($events as $event) {
-            $this->assertEquals($id, $event->getId());
-            $this->assertEquals($playhead, $event->getPlayhead());
-            $this->assertEquals($metadata, $event->getMetadata());
-            $this->assertEquals($payload, $event->getPayload());
-            $this->assertEquals($recordedOn, $event->getRecordedOn());
+        /** @var DomainMessage $event */
+		foreach ($events as $event) {
+            self::assertEquals($id, $event->getId());
+            self::assertEquals($playhead, $event->getPlayhead());
+            self::assertEquals($metadata, $event->getMetadata());
+            self::assertEquals($payload, $event->getPayload());
+            self::assertEquals($recordedOn, $event->getRecordedOn());
         }
     }
 
-    public function testInsertMessageAndLoadFromPlayhead()
+    public function testInsertMessageAndLoadFromPlayhead(): void
     {
         $id =  \Ramsey\Uuid\Uuid::uuid4()->toString();
         $playhead = random_int(1, 9999);
@@ -137,18 +139,19 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
 
         $events = $this->dynamoDbEventStore->loadFromPlayhead($id, $playhead);
 
-        $this->assertCount(1, $events);
+        self::assertCount(1, $events);
 
-        foreach ($events as $event) {
-            $this->assertEquals($id, $event->getId());
-            $this->assertEquals($playhead, $event->getPlayhead());
-            $this->assertEquals($metadata, $event->getMetadata());
-            $this->assertEquals($payload, $event->getPayload());
-            $this->assertEquals($recordedOn, $event->getRecordedOn());
+        /** @var DomainMessage $event */
+		foreach ($events as $event) {
+            self::assertEquals($id, $event->getId());
+            self::assertEquals($playhead, $event->getPlayhead());
+            self::assertEquals($metadata, $event->getMetadata());
+            self::assertEquals($payload, $event->getPayload());
+            self::assertEquals($recordedOn, $event->getRecordedOn());
         }
     }
 
-    private function appendEvent($id)
+    private function appendEvent(mixed $id): DomainEventStream
     {
         $playhead = random_int(1, 9999);
         $metadata = new \Broadway\Domain\Metadata(['id' => $id, 'foo' => 'bar']);
@@ -168,7 +171,7 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
         return new DomainEventStream([$domainMessage]);
     }
 
-    public function testInsertMessageAndVisitEvents()
+    public function testInsertMessageAndVisitEvents(): void
     {
         $id =  \Ramsey\Uuid\Uuid::uuid4()->toString();
         $id2 =  \Ramsey\Uuid\Uuid::uuid4()->toString();
@@ -187,22 +190,19 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
         $eventVisitor = new RecordingEventVisitor();
 
         $this->dynamoDbEventStore->visitEvents($criteria, $eventVisitor);
-        $events = $this->dynamoDbEventStore->getItems();
+		$items = $this->dynamoDbEventStore->getItems();
+		/** @var array<array<array<string,mixed>>> $events */
+		$events = $items['Items'] ?? [];
 
-        var_dump($events);
+        self::assertCount(2, $events);
 
-
-
-
-        $this->assertCount(2, $events['Items']);
-
-        foreach ($events['Items'] as $event) {
+        foreach ($events as $event) {
             $eventDeserialized = DeserializeEvent::deserialize($event, new ReflectionSerializer(), new ReflectionSerializer());
-            $this->assertTrue($eventDeserialized->getId() === $id || $eventDeserialized->getId() === $id2);
+            self::assertTrue($eventDeserialized->getId() === $id || $eventDeserialized->getId() === $id2);
         }
     }
 
-    public function testEmptyEventsThrowExceptionOnLoad()
+    public function testEmptyEventsThrowExceptionOnLoad(): void
     {
         $id =  \Ramsey\Uuid\Uuid::uuid4()->toString();
 
@@ -215,7 +215,7 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
         $this->dynamoDbEventStore->load($id);
     }
 
-    public function testEmptyEventsThrowExceptionOnLoadFromPlayhead()
+    public function testEmptyEventsThrowExceptionOnLoadFromPlayhead(): void
     {
         $id =  \Ramsey\Uuid\Uuid::uuid4()->toString();
         $playhead = random_int(1, 9999);
@@ -229,7 +229,7 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
         $this->dynamoDbEventStore->loadFromPlayhead($id, $playhead);
     }
 
-    public function testInsertMessageAndVisitEventsWithAggregateRootTypesThrowException()
+    public function testInsertMessageAndVisitEventsWithAggregateRootTypesThrowException(): void
     {
         $id =  \Ramsey\Uuid\Uuid::uuid4()->toString();
         $id2 =  \Ramsey\Uuid\Uuid::uuid4()->toString();
@@ -253,23 +253,9 @@ class DynamoDbEventStoreTest extends \PHPUnit\Framework\TestCase
     }
 }
 
-
 class RecordingEventVisitor implements EventVisitor
 {
-    /**
-     * @var DomainMessage
-     */
-    private $visitedEvents;
-
     public function doWithEvent(DomainMessage $domainMessage): void
-    {
-    }
-
-    public function getVisitedEvents()
-    {
-    }
-
-    public function clearVisitedEvents(): void
     {
     }
 }

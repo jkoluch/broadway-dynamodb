@@ -9,9 +9,10 @@
         }
     ],
     "require": {
-        "php": ">=7.4",
+        "php": "~8.2.0",
         "broadway/broadway": "^2.0",
-        "aws/aws-sdk-php": "<=3.140"
+        "aws/aws-sdk-php": "<=3.140",
+        "webmozart/assert": "^1.9"
     },
     "require-dev": {
         "ramsey/uuid": "^3.3",
@@ -34,8 +35,5 @@
         "branch-alias": {
             "dev-master": "3.0-dev"
         }
-    },
-    "config": {
-        "bin-dir": "bin"
     }
 }

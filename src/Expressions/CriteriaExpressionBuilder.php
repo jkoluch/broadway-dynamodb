@@ -8,6 +8,9 @@ class CriteriaExpressionBuilder
     private ExpressionAttributeNames $expressionAttributeNames;
     private ExpressionAttributeValues $expressionAttributeValues;
 
+	/**
+	 * @param array<string,mixed> $fields
+	 */
     public function __construct(array $fields)
     {
         $this->filterExpression = new FilterExpression();
@@ -53,7 +56,10 @@ class CriteriaExpressionBuilder
         return $this->expressionAttributeValues->getExpression();
     }
 
-    public function getExpressionAttributeNames() :array
+	/**
+	 * @return array<string,string>
+	 */
+	public function getExpressionAttributeNames() :array
     {
         return $this->expressionAttributeNames->getExpression();
     }

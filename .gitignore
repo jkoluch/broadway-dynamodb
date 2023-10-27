@@ -1,3 +1,6 @@
+# phpstorm setting
+/.idea/
+
 /vendor/
 phpunit.xml
 .phpunit.result.cache

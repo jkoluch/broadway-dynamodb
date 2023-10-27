@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 
 class ExpressionAttributeValuesTest extends TestCase
 {
-    private $expressionAttributeValues;
+    private ExpressionAttributeValues $expressionAttributeValues;
 
     protected function setUp(): void
     {
@@ -23,13 +23,13 @@ class ExpressionAttributeValuesTest extends TestCase
         $this->expressionAttributeValues = new ExpressionAttributeValues();
     }
 
-    public function testCreateExpressionAttributeValues()
+    public function testCreateExpressionAttributeValues(): void
     {
 
-        $this->assertEquals('{', $this->expressionAttributeValues->getExpression());
+        self::assertEquals('{', $this->expressionAttributeValues->getExpression());
     }
 
-    public function testAddFieldWithPosition()
+    public function testAddFieldWithPosition(): void
     {
         $field = 'foo';
         $position = random_int(1, 999);
@@ -38,31 +38,31 @@ class ExpressionAttributeValuesTest extends TestCase
 
         $this->expressionAttributeValues->addFieldWithPosition($field, $position, $value);
 
-        $this->assertEquals('{":foo' . $positionExpected . '":"bar"', $this->expressionAttributeValues->getExpression());
+        self::assertEquals('{":foo' . $positionExpected . '":"bar"', $this->expressionAttributeValues->getExpression());
     }
 
-    public function testAddField()
+    public function testAddField(): void
     {
         $field = 'foo';
         $value = 'bar';
 
         $this->expressionAttributeValues->addField($field, $value);
 
-        $this->assertEquals('{":foo":"bar"', $this->expressionAttributeValues->getExpression());
+        self::assertEquals('{":foo":"bar"', $this->expressionAttributeValues->getExpression());
     }
 
-    public function testAddComma()
+    public function testAddComma(): void
     {
         $this->expressionAttributeValues->addComma();
 
-        $this->assertEquals('{,', $this->expressionAttributeValues->getExpression());
+        self::assertEquals('{,', $this->expressionAttributeValues->getExpression());
     }
 
-    public function testCloseExpression()
+    public function testCloseExpression(): void
     {
         $this->expressionAttributeValues->close();
 
-        $this->assertEquals('{}', $this->expressionAttributeValues->getExpression());
+        self::assertEquals('{}', $this->expressionAttributeValues->getExpression());
     }
 }
 

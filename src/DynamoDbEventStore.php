@@ -26,30 +26,18 @@ use Broadway\EventStore\Management\CriteriaNotSupportedException;
 use Broadway\EventStore\Management\EventStoreManagement;
 use Broadway\Serializer\Serializer;
 use Ramsey\Uuid\Uuid;
+use Webmozart\Assert\Assert;
 
 class DynamoDbEventStore implements EventStore, EventStoreManagement
 {
-    /** @var DynamoDbClient  $client*/
-    private $client;
-    /** @var Serializer */
-    private $payloadSerializer;
-    /** @var Serializer */
-    private $metadataSerializer;
-    /** @var string */
-    private $table;
-    /** @var Result|null */
-    private $items;
+    private ?Result $items = null;
 
     public function __construct(
-        DynamoDbClient $dynamoDbClient,
-        Serializer $payloadSerializer,
-        Serializer $metadataSerializer,
-        string $table
+        private DynamoDbClient $client,
+        private Serializer $payloadSerializer,
+        private Serializer $metadataSerializer,
+        private string $table
     ) {
-        $this->client = $dynamoDbClient;
-        $this->payloadSerializer = $payloadSerializer;
-        $this->metadataSerializer = $metadataSerializer;
-        $this->table = $table;
     }
 
     /**
@@ -59,7 +47,9 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
      */
     public function load($id): DomainEventStream
     {
-        $marshaler = new Marshaler();
+        Assert::string($id, 'Id must be string.');
+
+		$marshaler = new Marshaler();
 
         $fields = [
             'uuid' => $id,
@@ -70,7 +60,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
 
         $eav = $marshaler->marshalJson($scanFilter->getExpressionAttributeValues());
 
-        $itemsCollection = $this->client->scan(array(
+		$itemsCollection = $this->client->scan(array(
             'TableName' => $this->table,
             'FilterExpression' => '#uuid = :uuid and playhead = :playhead',
             'ExpressionAttributeNames' => ['#uuid' => 'uuid'],
@@ -78,12 +68,13 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
         ));
 
         $events = [];
+		/** @var array<array<array<string,mixed>>>|null $items */
         $items = $itemsCollection['Items'];
 
         if (null === $items) {
             throw new EventStreamNotFoundException(sprintf(
                 'EventStream not found for aggregate with id %s for table %s',
-                $id,
+				$id,
                 $this->table
             ));
         }
@@ -92,7 +83,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
             $events[] = DeserializeEvent::deserialize($item, $this->payloadSerializer, $this->metadataSerializer);
         }
 
-        if (empty($events)) {
+        if ($events === []) {
             throw new EventStreamNotFoundException(sprintf(
                 'EventStream not found for aggregate with id %s for table %s',
                 $id,
@@ -103,12 +94,10 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
         return new DomainEventStream($events);
     }
 
-    /**
-     * @param mixed $id
-     * @param int $playhead
-     */
     public function loadFromPlayhead($id, int $playhead): DomainEventStream
     {
+		Assert::string($id, 'Id must be string.');
+
         $marshaler = new Marshaler();
 
         $fields = [
@@ -128,6 +117,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
         ));
 
         $events = [];
+		/** @var array<array<array<string,mixed>>>|null $items */
         $items = $itemsCollection['Items'];
 
         if (null === $items) {
@@ -142,7 +132,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
             $events[] = DeserializeEvent::deserialize($item, $this->payloadSerializer, $this->metadataSerializer);
         }
 
-        if (empty($events)) {
+        if ($events === []) {
             throw new EventStreamNotFoundException(sprintf('EventStream not found for aggregate with id %s for table %s', $id, $this->table));
         }
 
@@ -158,7 +148,8 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
     public function append($id, DomainEventStream $eventStream): void
     {
         //TODO: use transactions
-        foreach ($eventStream as $domainMessage) {
+		/** @var DomainMessage $domainMessage */
+		foreach ($eventStream as $domainMessage) {
             $this->insertMessage($domainMessage);
         }
     }
@@ -179,7 +170,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
 
         $json = json_encode($data);
 
-        if (!$json) {
+        if ($json === false) {
             $json = '';
         }
 
@@ -201,7 +192,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
 
     public function visitEvents(Criteria $criteria, EventVisitor $eventVisitor): void
     {
-        if ($criteria->getAggregateRootTypes()) {
+        if ($criteria->getAggregateRootTypes() !== []) {
             throw new CriteriaNotSupportedException(
                 'DynamoDb implementation cannot support criteria based on aggregate root types.'
             );
@@ -213,7 +204,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
         $marshaler = new Marshaler();
         $eav = $marshaler->marshalJson($scanFilter->getExpressionAttributeValues());
 
-        $itemsCollection = $this->client->scan(array(
+		$itemsCollection = $this->client->scan(array(
             'TableName' => $this->table,
             'FilterExpression' => $scanFilter->getFilterExpression(),
             'ExpressionAttributeNames' => $scanFilter->getExpressionAttributeNames(),
@@ -229,6 +220,7 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
             ));
         }
 
+		/** @var array<array<array<string,mixed>>>|null $events */
         $events = $this->items['Items'];
         if (null === $events) {
             throw new EventStreamNotFoundException(sprintf(
@@ -244,13 +236,16 @@ class DynamoDbEventStore implements EventStore, EventStoreManagement
         }
     }
 
-    private function convertCriteriaToArray(Criteria $criteria): array
+	/**
+	 * @return array<string,array{in:mixed[]}>
+	 */
+	private function convertCriteriaToArray(Criteria $criteria): array
     {
         $findBy = [];
-        if ($criteria->getAggregateRootIds()) {
+        if ($criteria->getAggregateRootIds() !== []) {
             $findBy['uuid'] = ['in' => $criteria->getAggregateRootIds()];
         }
-        if ($criteria->getEventTypes()) {
+        if ($criteria->getEventTypes() !== []) {
             $findBy['type'] = ['in' => $criteria->getEventTypes()];
         }
 

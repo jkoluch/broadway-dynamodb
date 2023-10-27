@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 
 class FilterExpressionTest extends TestCase
 {
-    private $filterExpression;
+    private FilterExpression $filterExpression;
 
     protected function setUp(): void
     {
@@ -23,7 +23,7 @@ class FilterExpressionTest extends TestCase
         $this->filterExpression = new FilterExpression();
     }
 
-    public function testAddField()
+    public function testAddField(): void
     {
         $field = 'foo';
 
@@ -31,10 +31,10 @@ class FilterExpressionTest extends TestCase
 
         $expected = '#' . $field . ' = :' . $field;
 
-        $this->assertEquals($expected, $this->filterExpression->getExpression());
+        self::assertEquals($expected, $this->filterExpression->getExpression());
     }
 
-    public function testInFieldWithPosition()
+    public function testInFieldWithPosition(): void
     {
         $field = 'foo';
         $position = random_int(1, 9999);
@@ -44,10 +44,10 @@ class FilterExpressionTest extends TestCase
 
         $expected = ':' . $field . $positionExpected;
 
-        $this->assertEquals($expected, $this->filterExpression->getExpression());
+        self::assertEquals($expected, $this->filterExpression->getExpression());
     }
 
-    public function testAddConditionOperator()
+    public function testAddConditionOperator(): void
     {
         $condition = 'or';
 
@@ -55,10 +55,10 @@ class FilterExpressionTest extends TestCase
 
         $expected = ' or ';
 
-        $this->assertEquals($expected, $this->filterExpression->getExpression());
+        self::assertEquals($expected, $this->filterExpression->getExpression());
     }
 
-    public function testAddInCondition()
+    public function testAddInCondition(): void
     {
         $field = 'field';
 
@@ -66,16 +66,16 @@ class FilterExpressionTest extends TestCase
 
         $expected = '#' . $field . ' IN(';
 
-        $this->assertEquals($expected, $this->filterExpression->getExpression());
+        self::assertEquals($expected, $this->filterExpression->getExpression());
     }
 
-    public function testAddComma()
+    public function testAddComma(): void
     {
         $this->filterExpression->addComma();
 
         $expected = ', ';
 
-        $this->assertEquals($expected, $this->filterExpression->getExpression());
+        self::assertEquals($expected, $this->filterExpression->getExpression());
     }
 }
 

@@ -11,7 +11,10 @@ namespace Broadway\EventStore\DynamoDb\Expressions;
 
 class ExpressionAttributeNames
 {
-    private array $expression;
+	/**
+	 * @var array<string,string>
+	 */
+	private array $expression;
 
     public function __construct()
     {
@@ -23,7 +26,10 @@ class ExpressionAttributeNames
         $this->expression['#' . $field] = $field;
     }
 
-    public function getExpression() :array
+	/**
+	 * @return array<string,string>
+	 */
+	public function getExpression() :array
     {
         return $this->expression;
     }

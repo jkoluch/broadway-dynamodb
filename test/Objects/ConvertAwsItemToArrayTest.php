@@ -14,23 +14,23 @@ use PHPUnit\Framework\TestCase;
 
 class ConvertAwsItemToArrayTest extends TestCase
 {
-    public function testReturnNullIfItemIsEmpty()
+    public function testReturnNullIfItemIsEmpty(): void
     {
         $resultConverted = ConvertAwsItemToArray::convert(null);
-        $this->assertNull($resultConverted);
+        self::assertNull($resultConverted);
     }
 
-    public function testThrowExceptionIfTypeNotFound()
+    public function testThrowExceptionIfTypeNotFound(): void
     {
         $this->expectException(\Exception::class);
         ConvertAwsItemToArray::convert([['notExistingKey' => 'foo']]);
     }
 
-    public function testPassCorrectKeyReturnData()
+    public function testPassCorrectKeyReturnData(): void
     {
         $itemValue = 'foo';
         $resultConverted = ConvertAwsItemToArray::convert([['S' => $itemValue]]);
 
-        $this->assertEquals([$itemValue], $resultConverted);
+        self::assertEquals([$itemValue], $resultConverted);
     }
 }
